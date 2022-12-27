@@ -1,0 +1,38 @@
+[
+    {
+        "name":"Succulent",
+        "imgSource":"../../assets/succulent.jpg",
+        "task":"Watering time",
+        "otherInfo":"50-60ml"
+    },
+    {
+        "name":"Money plant",
+        "imgSource":"../../assets/moneyplant.jpg",
+        "task":"Spray mist",
+        "otherInfo":"10ml"
+    },
+    {
+        "name":"Spring Onion",
+        "imgSource":"../../assets/springonion.jpg",
+        "task":"Watering time",
+        "otherInfo":"40-50ml"
+    },
+    {
+        "name":"Hibiscus",
+        "imgSource":"../../assets/hibiscus.jpg",
+        "task":"Watering time",
+        "otherInfo":"50-60ml"
+    },
+    {
+        "name":"Aleo Vera",
+        "imgSource":"../../assets/aleovera.jpg",
+        "task":"Keep near window for sun",
+        "otherInfo":""
+    },
+    {
+        "name":"Tulsi",
+        "imgSource":"../../assets/tulsi.jpg",
+        "task":"Watering time",
+        "otherInfo":"100-120ml"
+    }
+]

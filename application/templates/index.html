@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+{% block content %}
+<div>
+    <form action="" method="POST">
+        {{ form.csrf_token() }}
+        <fieldset class="form-group">
+            <legend>Login</legend>
+
+            <div class="form-group">
+                {{ form.uname.label(class="form-control-label") }}
+                {% if form.uname.errors %}
+                    {{ form.uname(class="form-control form-control is-invalid") }}
+                    {% for error in form.uname.errors %}
+                        <div class="invalid-feedback">
+                            <span>{{ error }}</span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    {{ form.uname(class="form-control form-control") }}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.passwd.label(class="form-control-label") }}
+                {% if form.passwd.errors %}
+                    {{ form.passwd(class="form-control form-control is-invalid") }}
+                    {% for error in form.passwd.errors %}
+                        <div class="invalid-feedback">
+                            <span>{{ error }}</span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    {{ form.passwd(class="form-control form-control") }}
+                {% endif %}
+            </div>
+
+
+            <div class="form-group">
+                {{ form.submit(class="btn btn-outline-info") }}
+            </div>
+        </fieldset>
+    </form>
+</div>
+{% endblock %}
