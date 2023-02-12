@@ -1,6 +1,6 @@
 from application import app
-from flask import render_template, request, redirect, flash, url_for, session
-
+from flask import render_template, request, redirect, flash, url_for, session, jsonify
+import json
 from bson import ObjectId
 from .forms import *
 from application import db
@@ -12,7 +12,13 @@ login_user = None
 def login():
     global login_user
     if request.method == 'POST':
+        # data = request.json
+        # print(request.values)
+        # data = str(request.args)
+        # json_dumps = json.dumps(data)
+        # print(json_dumps)
         form = loginform(request.form)
+        print(form.uname.data,form.passwd.data)
         username = form.uname.data
         passwd = form.passwd.data
         login_user = db.users_db.find_one({'username': username})
@@ -21,12 +27,13 @@ def login():
             if passwd == login_user['password']:
                 # session['username'] = request.form['username']
                 flash("Login Success", "success")
-                return redirect("/add_todo")
+                return "success"
 
         return 'Invalid username/password combination'
     else:
         form = loginform()
-    return render_template("index.html", form = form)
+    # return render_template("index.html", form = form)
+    return 'ok'
 
 @app.route('/register', methods=['POST', 'GET'])
 def register():
