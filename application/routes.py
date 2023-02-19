@@ -5,18 +5,32 @@ from bson import ObjectId
 from .forms import *
 from application import db
 from datetime import datetime
+import jwt, datetime
+from functools import wraps
+# login_user = None
 
-login_user = None
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token=None
+        if 'x-access-token' in request.headers:
+            token=request.headers['x-access-token']
+
+        if not token:
+            return jsonify({'message':"missing token"}), 401
+        try:
+            data=jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
+            current_user=data['user'] #db.users_db.find_one({'username': data['user']})['username']
+        except:
+            return jsonify({'message':'Invalid Token'}), 401
+
+        return f(current_user, *args, **kwargs)
+    return decorated
 
 @app.route('/login', methods=['POST',  'GET'])
 def login():
-    global login_user
+    # global login_user
     if request.method == 'POST':
-        # data = request.json
-        # print(request.values)
-        # data = str(request.args)
-        # json_dumps = json.dumps(data)
-        # print(json_dumps)
         form = loginform(request.form)
         print(form.uname.data,form.passwd.data)
         username = form.uname.data
@@ -25,14 +39,12 @@ def login():
 
         if db.users_db.find_one({'username': username}):
             if passwd == login_user['password']:
-                # session['username'] = request.form['username']
-                flash("Login Success", "success")
-                return "success"
+                token=jwt.encode({"user":username, "exp":datetime.datetime.utcnow()+datetime.timedelta(minutes=10)}, app.config['SECRET_KEY'])
+                return jsonify({'token':token})
 
         return 'Invalid username/password combination'
     else:
         form = loginform()
-    # return render_template("index.html", form = form)
     return 'ok'
 
 @app.route('/register', methods=['POST', 'GET'])
@@ -70,8 +82,8 @@ def register():
 
 @app.route("/add_todo", methods = ['POST', 'GET'])
 def add_todo():
-    global login_user
-    print(login_user)
+    # global login_user
+    # print(login_user)
     if login_user:
         if request.method == "POST":
             form = TodoForm(request.form)
@@ -135,19 +147,18 @@ def get_plants():
 
 
 @app.route("/all_todos")
-def get_todos():
-    global login_user
-    print(login_user)
-    if login_user:
-        todos = []
-        for todo in db.tasks.find():
-            if todo["username"]==login_user["username"]:
-            # todo["_id"] = str(todo["_id"])
-            # todo["date_created"] = todo["date_created"].strftime("%b %d %Y %H:%M:%S")
-                print("-->",todo)
-                todos.append(todo)
-        print(todos)
-        return render_template("view_todos.html", todos = todos)
+@token_required
+def get_todos(current_user):
+    # global login_user
+    # print(login_user)
+    # if login_user:
+    todos = []
+    print(current_user)
+    for todo in db.tasks.find({'username': current_user}):
+        todo["_id"]=str(todo["_id"])
+        todos.append(todo)
+    print(todos)
+    return jsonify({"tasks":todos})
 
 @app.route("/delete_todo/<id>")
 def delete_todo(id):
