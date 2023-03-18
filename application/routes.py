@@ -39,7 +39,7 @@ def login():
 
         if db.users_db.find_one({'username': username}):
             if passwd == login_user['password']:
-                token=jwt.encode({"user":username, "exp":datetime.datetime.utcnow()+datetime.timedelta(minutes=10)}, app.config['SECRET_KEY'])
+                token=jwt.encode({"user":username, "exp":datetime.datetime.utcnow()+datetime.timedelta(minutes=40)}, app.config['SECRET_KEY'])
                 return jsonify({'token':token})
 
         return 'Invalid username/password combination'
@@ -146,7 +146,7 @@ def get_plants():
         return render_template("view_plants.html", plants = plants)
 
 
-@app.route("/all_todos")
+@app.route("/user_todos")
 @token_required
 def get_todos(current_user):
     # global login_user
