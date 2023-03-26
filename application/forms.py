@@ -27,3 +27,14 @@ class plantform(FlaskForm):
     caretips = TextAreaField('Planting Care Tips')
     img = StringField('Image link',validators=[DataRequired()])
     submit = SubmitField("Add Plant")
+
+class queform(FlaskForm):
+    question = StringField('Question')
+    bodyy = StringField('Body')
+    image = StringField('Image link')
+    submit = SubmitField("Add Question")
+
+class replyform(FlaskForm):
+    question = StringField('Question') #-------joh title (main question hai) 
+    answer = StringField('Add Comment') #---------joh voh khud uss title ke thread mein comment karna chahta hai
+    submit = SubmitField("Submit")

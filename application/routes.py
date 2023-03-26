@@ -140,8 +140,8 @@ def add_plant():
 def get_plants():
         plants = []
         for p in db.plants_db.find():
-                # print("-->",todo)
-                plants.append(p)
+            # print("-->",todo)
+            plants.append(p)
         print(p)
         return render_template("view_plants.html", plants = plants)
 
@@ -193,3 +193,80 @@ def update_todo(id):
         form.completed.data = todo.get("completd", None)
 
     return render_template("add_todo.html", form = form)
+
+#question
+@app.route("/add_question", methods = ['POST', 'GET'])
+@token_required
+def add_ques(current_user):
+    # global login_user
+    # print(login_user)
+    # if login_user:
+    if request.method == "POST":
+        form = queform(request.form)
+        question = form.question.data
+        q_image = form.image.data
+
+        db.forum.insert_one({
+            "user": current_user,
+            "title" : question,
+            "image": q_image,
+            "likes": 0,
+            "comments":[]
+        })
+        flash("Comment successfully added", "success")
+        return 'ok'
+    else:
+        form = queform()
+    return render_template("add_todo.html", form = form) #---------------ye apne react ke hissab se change
+    # else:
+    #     # form = loginform()
+    #     flash("Please log-in to continue")
+    #     return redirect("/login")
+
+#comment
+@app.route("/add_comment")
+def add_comment():
+        if login_user:
+            if request.method == "POST":
+                form = replyform(request.form)
+                cmt_question = form.question.data
+                cmt_reply = form.answer.data
+
+                for todo in db.forum.find({'question': cmt_question}):
+                    todo["comments"].append({"user":login_user["username"], "comment":cmt_reply})
+            else:
+                form = queform()
+                return render_template("add_todo.html", form = form)
+
+
+@app.route("/delete_question/<id>")
+def delete_q(id):
+    db.forum.find_one_and_delete({"_id": ObjectId(id)})
+    flash("Question successfully deleted", "success")
+    return redirect("/")
+
+@app.route("/likequestion")
+def like_question(question):
+    if login_user:
+        for todo in db.forum.find({'question': question}):
+            todo["likes"]+=1
+
+@app.route("/all_discussions")
+def get_diss():
+        diss = []
+        for p in db.forum.find():
+                p["_id"]=str(p["_id"])
+                diss.append(p)
+        print(diss)
+        return jsonify({"questions":diss})
+
+@app.route("/discussions/<id>")
+def search_question(id):
+    t = db.forum.find({"_id": ObjectId(id)})[0]
+    print(t)
+    t["_id"]=str(t["_id"])
+    # lst=[]
+    # for t in db.forum.find({"_id": ObjectId(id)}):
+    #      t["_id"]=str(t["_id"])
+        #  lst.append(t)
+    return jsonify({"question":t})
