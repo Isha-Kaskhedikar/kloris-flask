@@ -7,6 +7,11 @@ from application import db
 from datetime import datetime
 import jwt, datetime
 from functools import wraps
+# from recc import get_recommendations
+import pyowm
+from .recc import *
+
+owm = pyowm.OWM(api_key='e4a30d84109db4bdcadf63ac685a0065')
 # login_user = None
 
 def token_required(f):
@@ -265,8 +270,39 @@ def search_question(id):
     t = db.forum.find({"_id": ObjectId(id)})[0]
     print(t)
     t["_id"]=str(t["_id"])
-    # lst=[]
-    # for t in db.forum.find({"_id": ObjectId(id)}):
-    #      t["_id"]=str(t["_id"])
-        #  lst.append(t)
     return jsonify({"question":t})
+
+@app.route("/recommendation")
+@token_required
+def get_quess(current_user):
+    form = quessform(request.form)
+    l = form.light.data   #---light lux intensity mein hoga isiliye integer field
+    h = form.height.data
+    s = form.spread.data
+    u = form.usee.data
+    lat=form.lat.data #19.0369881
+    long=form.long.data #72.923294
+    print(l,h,s,u,lat,long)
+    mgr = owm.weather_manager()
+    daily_forecast = mgr.forecast_at_coords(lat, long, 'daily').forecast
+
+    minn = 0
+    maxx = 0
+    for weather in daily_forecast:
+        minn = minn + weather.temperature('celsius')['min']
+        maxx = maxx + weather.temperature('celsius')['max']
+
+    
+    # lsttt = [l,minn/7,maxx/7,h,s,u]
+    ip={
+        'light':l,
+        'minTemp':minn/6,
+        'maxTemp':maxx/6,
+        'height':h,
+        'spread':s,
+        'use':u
+    }
+    print(ip)
+    op=get_recommendations(ip)
+    print(op)
+    return jsonify({"recommendation": op})

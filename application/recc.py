@@ -1,4 +1,4 @@
-from flask import Flask, request
+# from flask import Flask, request
 import numpy as np
 import pandas as pd
 import re
@@ -8,7 +8,7 @@ from sklearn.cluster import DBSCAN
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 
-app = Flask(__name__)
+# app = Flask(__name__)
 
 
 def cluster(og_df,light,minTemp,maxTemp,height,spread):
@@ -81,13 +81,14 @@ def tf_idf(cluster_df,use):
     
     return cluster_df.iloc[indices]
 
-@app.route('/recommendations', methods=['POST','GET'])
-def get_recommendations():
+# @app.route('/recommendations', methods=['POST','GET'])
+def get_recommendations(user_input):
     # Load dataset
-    og_df = pd.read_excel('plantsDB.xlsx')
+    st="D:/RNH/kloris/kloris-flask/application/plantsDB.xlsx"
+    og_df = pd.read_excel(st)
 
     # Get user input
-    user_input = request.get_json()
+    # user_input = request.get_json()
 
     light = user_input['light']
     minTemp = user_input['minTemp']   # from weather api
@@ -106,5 +107,5 @@ def get_recommendations():
         return cluster(og_df,"Full Sun",20,30,4,2).sample(10).to_dict('dict')
 
 
-if __name__ == "__main__":
-    app.run(debug=True, port=8000)
+# if __name__ == "__main__":
+#     app.run(debug=True, port=8000)

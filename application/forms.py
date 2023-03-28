@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SelectField, SubmitField, EmailField, PasswordField, FileField
+from wtforms import StringField, TextAreaField, SelectField, SubmitField, EmailField, PasswordField, FileField, IntegerField,FloatField
 from wtforms.validators import DataRequired, Length
 
 class TodoForm(FlaskForm):
@@ -37,4 +37,13 @@ class queform(FlaskForm):
 class replyform(FlaskForm):
     question = StringField('Question') #-------joh title (main question hai) 
     answer = StringField('Add Comment') #---------joh voh khud uss title ke thread mein comment karna chahta hai
+    submit = SubmitField("Submit")
+
+class quessform(FlaskForm):
+    light = IntegerField('Light_Intensity')
+    height = IntegerField('Height')
+    spread = IntegerField('Spread')
+    usee= StringField('Use')
+    lat = FloatField('Latitude')
+    long = FloatField('Longitude')
     submit = SubmitField("Submit")
