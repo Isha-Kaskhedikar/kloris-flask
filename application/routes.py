@@ -5,6 +5,7 @@ from bson import ObjectId
 from .forms import *
 from application import db
 from datetime import datetime
+# from datetime import datetime as dt, timedelta
 import jwt, datetime
 from functools import wraps
 # from recc import get_recommendations
@@ -44,7 +45,7 @@ def login():
 
         if db.users_db.find_one({'username': username}):
             if passwd == login_user['password']:
-                token=jwt.encode({"user":username, "exp":datetime.datetime.utcnow()+datetime.timedelta(minutes=40)}, app.config['SECRET_KEY'])
+                token=jwt.encode({"user":username, "exp":datetime.datetime.utcnow()+datetime.timedelta(minutes=60)}, app.config['SECRET_KEY'])
                 return jsonify({'token':token})
 
         return 'Invalid username/password combination'
@@ -101,7 +102,7 @@ def add_todo():
                 "name": todo_name,
                 "description": todo_description,
                 "completed": completed,
-                "date_created": datetime.utcnow()
+                "date_created": datetime.datetime.utcnow()
             })
             flash("Todo successfully added", "success")
             return redirect("/add_todo")
@@ -141,22 +142,19 @@ def add_plant():
         return render_template("add_plant.html", form = form) 
 
 
-@app.route("/all_plants")
-def get_plants():
-        plants = []
-        for p in db.plants_db.find():
-            # print("-->",todo)
-            plants.append(p)
-        print(p)
-        return render_template("view_plants.html", plants = plants)
+# @app.route("/all_plants")
+# def get_plants():
+#         plants = []
+#         for p in db.plants_db.find():
+#             # print("-->",todo)
+#             plants.append(p)
+#         print(p)
+#         return render_template("view_plants.html", plants = plants)
 
 
-@app.route("/user_todos")
+@app.route("/user_todos2")
 @token_required
-def get_todos(current_user):
-    # global login_user
-    # print(login_user)
-    # if login_user:
+def get_todos1(current_user):
     todos = []
     print(current_user)
     for todo in db.tasks.find({'username': current_user}):
@@ -164,6 +162,40 @@ def get_todos(current_user):
         todos.append(todo)
     print(todos)
     return jsonify({"tasks":todos})
+
+@app.route("/user_todos")
+@token_required
+def get_todos(current_user):
+    todos = []
+    print(current_user)
+    for todo in db.tasks.find({'username': current_user}):
+        if todo["next"].date() == datetime.datetime.today().date():
+            todo["_id"]=str(todo["_id"])
+            todos.append(todo)
+    print(todos)
+    return jsonify({"tasks":todos})
+
+@app.route("/update_todos", methods = ['POST', 'GET']) # when to trigger next (time to perform task)
+def update_next():
+    for i in db.tasks.find():
+        db.tasks.update_one({"_id":i["_id"]}, {"$set":{"next" : i["lastdone"] + datetime.timedelta(hours= i["duration"])}})
+        db.tasks.update_one({"_id":i["_id"]}, {"$set":{"lastdone2" : i["lastdone"] }})
+
+@app.route("/done_task/<id>", methods = ['POST', 'GET'])
+def mark_as_done(id):
+    db.tasks.update_one({"_id": ObjectId(id)}, {"$set":{"lastdone" :  datetime.datetime.now() }})
+    print("success")
+
+@app.route("/user_plants") # send back img, name, id (atleast)
+@token_required
+def get_plants1(current_user):
+    plants = []
+    print(current_user)
+    for plant in db.user_plants.find({'userID': current_user}):
+        plant["_id"]=str(plant["_id"])
+        plants.append(plant)
+    print(plants)
+    return jsonify({"plants":plants})
 
 @app.route("/delete_todo/<id>")
 def delete_todo(id):
@@ -184,7 +216,7 @@ def update_todo(id):
             "name": todo_name,
             "description": todo_description,
             "completed": completed,
-            "date_created": datetime.utcnow()
+            "date_created": datetime.datetime.utcnow()
         }})
         flash("Todo successfully updated", "success")
         return redirect("/")
@@ -272,7 +304,7 @@ def search_question(id):
     t["_id"]=str(t["_id"])
     return jsonify({"question":t})
 
-@app.route("/recommendation")
+@app.route("/recommendation", methods = ['POST', 'GET'])
 @token_required
 def get_quess(current_user):
     form = quessform(request.form)
@@ -295,7 +327,7 @@ def get_quess(current_user):
     
     # lsttt = [l,minn/7,maxx/7,h,s,u]
     ip={
-        'light':l,
+        'light':"Full Sun",
         'minTemp':minn/6,
         'maxTemp':maxx/6,
         'height':h,
