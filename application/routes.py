@@ -11,6 +11,7 @@ from functools import wraps
 # from recc import get_recommendations
 import pyowm
 from .recc import *
+import pandas as pd
 
 owm = pyowm.OWM(api_key='e4a30d84109db4bdcadf63ac685a0065')
 # login_user = None
@@ -171,6 +172,9 @@ def get_todos(current_user):
     for todo in db.tasks.find({'username': current_user}):
         if todo["next"].date() == datetime.datetime.today().date():
             todo["_id"]=str(todo["_id"])
+            for t in db.user_plants.find({'_id':ObjectId(todo["user_plant_id"])}):
+                todo['image'] = t['image']
+                todo['plant_name']=t['plant_name']
             todos.append(todo)
     print(todos)
     return jsonify({"tasks":todos})
@@ -178,20 +182,39 @@ def get_todos(current_user):
 @app.route("/update_todos", methods = ['POST', 'GET']) # when to trigger next (time to perform task)
 def update_next():
     for i in db.tasks.find():
-        db.tasks.update_one({"_id":i["_id"]}, {"$set":{"next" : i["lastdone"] + datetime.timedelta(hours= i["duration"])}})
+        db.tasks.update_one({"_id":i["_id"]}, {"$set":{"next" : i["lastdone"] + datetime.timedelta(hours= i["duration"]),"status":False}})
         db.tasks.update_one({"_id":i["_id"]}, {"$set":{"lastdone2" : i["lastdone"] }})
+    return jsonify({"midnight":"do"})
 
 @app.route("/done_task/<id>", methods = ['POST', 'GET'])
 def mark_as_done(id):
-    db.tasks.update_one({"_id": ObjectId(id)}, {"$set":{"lastdone" :  datetime.datetime.now() }})
+    db.tasks.update_one({"_id": ObjectId(id)}, {"$set":{"lastdone" :  datetime.datetime.now() ,"status":True}})
     print("success")
+    return jsonify({"status":"check"})
 
-@app.route("/user_plants") # send back img, name, id (atleast)
+@app.route("/undone_task/<id>", methods = ['POST', 'GET'])
+def mark_as_undone(id):
+    for i in db.tasks.find({"_id": ObjectId(id)}):
+        db.tasks.update_one({"_id":ObjectId(id)}, {"$set":{"lastdone" : i["lastdone2"] ,"status":False}})
+    print("success")
+    return jsonify({"status":"uncheck"})
+
+@app.route("/mygarden",  methods = ['POST', 'GET'])
+@token_required
+def mygarden(current_user):
+    todos = []
+    for todo in db.user_plants.find({'userID': current_user}):
+            todo["_id"]=str(todo["_id"])
+            todos.append(todo)
+    print(todos)
+    return jsonify({"plants":todos})
+
+@app.route("/user_plants", methods = ['POST', 'GET']) # send back img, name, id (atleast)
 @token_required
 def get_plants1(current_user):
     plants = []
     print(current_user)
-    for plant in db.user_plants.find({'userID': current_user}):
+    for plant in db.tasks.find({'username': current_user}):
         plant["_id"]=str(plant["_id"])
         plants.append(plant)
     print(plants)
@@ -235,9 +258,6 @@ def update_todo(id):
 @app.route("/add_question", methods = ['POST', 'GET'])
 @token_required
 def add_ques(current_user):
-    # global login_user
-    # print(login_user)
-    # if login_user:
     if request.method == "POST":
         form = queform(request.form)
         question = form.question.data
@@ -324,8 +344,6 @@ def get_quess(current_user):
         minn = minn + weather.temperature('celsius')['min']
         maxx = maxx + weather.temperature('celsius')['max']
 
-    
-    # lsttt = [l,minn/7,maxx/7,h,s,u]
     ip={
         'light':"Full Sun",
         'minTemp':minn/6,
@@ -337,4 +355,41 @@ def get_quess(current_user):
     print(ip)
     op=get_recommendations(ip)
     print(op)
-    return jsonify({"recommendation": op})
+    op2=[]
+    for key in op["id"].keys():
+        temp={}
+        temp['id']=key
+        temp['common_name']=op['common name'][key]
+        temp['scientific_name']=op['scientific name'][key]
+        temp['image']=op['image'][key]
+        op2.append(temp)
+
+    return jsonify({"recommendation": op2})
+
+@app.route('/excel_row/<id>', methods=['POST','GET'])
+def fetch_row(id):   #------------id dala toh id+1 wala row ayega
+    df = pd.read_excel('application/plantsDB.xlsx')
+    id=int(id)
+    t=df.iloc[id].replace(np.nan, '').to_dict() 
+    print(id,type(id))
+    # print(t)
+
+    print("--")
+    p={}
+    p['id'] = int(t['id'])
+    p['common_name']=t['common name']
+    p['sci_name']=t['scientific name']
+    p['min_temp'] = int(t['min temp'])
+    p['max_temp'] = int(t['max temp'])
+    p['f_time']=t['flower time']
+    p['min_pH'] = float(t['min pH'])
+    p['max_pH'] = float(t['max pH'])
+    p['height'] = float(t['height'])
+    p['spread'] = float(t['spread'])
+    p['image'] = t['image']
+    p['soilph']=t['soil pH']
+    p['uses']=t['uses']
+    p['reses']=t['resistances']
+    p['miss']=t['miscellaneous']
+    print(p)
+    return jsonify({"plant": p})
