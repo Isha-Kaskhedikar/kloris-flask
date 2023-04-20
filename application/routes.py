@@ -11,6 +11,7 @@ from functools import wraps
 # from recc import get_recommendations
 import pyowm
 from .recc import *
+from .predict import *
 import pandas as pd
 
 owm = pyowm.OWM(api_key='e4a30d84109db4bdcadf63ac685a0065')
@@ -220,6 +221,14 @@ def get_plants1(current_user):
     print(plants)
     return jsonify({"plants":plants})
 
+@app.route('/my_plant/<id>', methods=['POST','GET'])
+def fetch_plant(id):
+    t=[]
+    for i in db.user_plants.find({"_id": ObjectId(id)}):
+        i["_id"]=str(i["_id"])
+        t.append(i)
+    return jsonify({"plant": t[0]})
+
 @app.route("/delete_todo/<id>")
 def delete_todo(id):
     db.todo_flask.find_one_and_delete({"_id": ObjectId(id)})
@@ -261,12 +270,14 @@ def add_ques(current_user):
     if request.method == "POST":
         form = queform(request.form)
         question = form.question.data
+        body = form.bodyy.data
         q_image = form.image.data
 
         db.forum.insert_one({
             "user": current_user,
             "title" : question,
             "image": q_image,
+            "body":body,
             "likes": 0,
             "comments":[]
         })
@@ -393,3 +404,9 @@ def fetch_row(id):   #------------id dala toh id+1 wala row ayega
     p['miss']=t['miscellaneous']
     print(p)
     return jsonify({"plant": p})
+
+@app.route("/predict", methods = ['POST', 'GET', 'FETCH'])
+def prediction():
+    print(request.form)
+    img='D:/RNH/kloris/kloris-flask/application/model/lfmld.JPG'
+    return predict(img)
