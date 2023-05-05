@@ -13,7 +13,14 @@ import pyowm
 from .recc import *
 from .predict import *
 import pandas as pd
+import cloudinary
+import cloudinary.uploader
 
+cloudinary.config(
+    cloud_name="dywt0uf4r",
+    api_key="825151867413978",
+    api_secret="krIJ8AtcVFrwra1vcKURSCLBTkA"
+)
 owm = pyowm.OWM(api_key='e4a30d84109db4bdcadf63ac685a0065')
 # login_user = None
 
@@ -405,8 +412,23 @@ def fetch_row(id):   #------------id dala toh id+1 wala row ayega
     print(p)
     return jsonify({"plant": p})
 
-@app.route("/predict", methods = ['POST', 'GET', 'FETCH'])
+@app.route("/predict2", methods = ['POST', 'GET', 'FETCH'])
 def prediction():
-    print(request.form)
+    print(request.files.get('photo'))
     img='application/model/lfmld.JPG'
     return predict(img)
+
+@app.route('/predict', methods=['POST'])
+def upload_file():
+  if request.method == 'POST':
+    print("\n ----> ", request.files.get('photo'))
+    file_to_upload = request.files.get('photo')
+    app.logger.info('%s file_to_upload', file_to_upload)
+    if file_to_upload:
+      upload_result = cloudinary.uploader.upload(file_to_upload)
+      print("hiii")
+      k= upload_result['url']
+      pred=predict(k)
+      print(pred)
+      return jsonify({"prediction":pred})
+    return "no file to upload"
