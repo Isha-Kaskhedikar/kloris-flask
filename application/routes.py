@@ -408,5 +408,5 @@ def fetch_row(id):   #------------id dala toh id+1 wala row ayega
 @app.route("/predict", methods = ['POST', 'GET', 'FETCH'])
 def prediction():
     print(request.form)
-    img='D:/RNH/kloris/kloris-flask/application/model/lfmld.JPG'
+    img='application/model/lfmld.JPG'
     return predict(img)
