@@ -11,7 +11,7 @@ def predict(img):
      'healthy', 'late_blight', 'leaf_mold', 'leaf_scorch', 'mosiac_virus',
      'northern_leaf_blight', 'powdery_mildew', 'septoria_leaf_spot',
      'spider_mite', 'target_spot', 'yellowLeaf__curl_virus']
-    model = models.load_model('D:/RNH/kloris/kloris-flask/application/model/mobNet_smallDS.h5')
+    model = models.load_model('application/model/mobNet_smallDS.h5')
     r = requests.get(img)
     with open('google_logo.png', 'wb') as f:
         f.write(r.content)
