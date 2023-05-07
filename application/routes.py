@@ -11,6 +11,7 @@ from functools import wraps
 # from recc import get_recommendations
 import pyowm
 from .recc import *
+from .newRecc import recommend
 from .predict import *
 import pandas as pd
 import cloudinary
@@ -341,6 +342,28 @@ def search_question(id):
     print(t)
     t["_id"]=str(t["_id"])
     return jsonify({"question":t})
+
+
+@app.route("/new_recommendation",methods = ['POST','GET'])
+def get_reccos():
+    # get user's existing plants list from db
+
+    lst = recommend(["Holy Basil, Tulsi","Star Jasmine"],5)
+    print("\n====== RECCOMMENDATIONS =====\n")
+    l=[]
+    for tup in lst:
+        print(tup[0],tup[1:])
+        df = {}
+        df["Common name"] = tup[1] 
+        df["Scientific name"] = tup[2] 
+        df["Height"] = tup[3]
+        df["Spread"] = tup[4]
+        df["Light"] = tup[5]
+        df["Water"] = tup[6]
+        df["Soil pH"] = tup[7]
+        df["Flowering Time"] = tup[8]
+        l.append({tup[0]:df})
+    return jsonify({"recommendation": l})
 
 @app.route("/recommendation", methods = ['POST', 'GET'])
 @token_required
