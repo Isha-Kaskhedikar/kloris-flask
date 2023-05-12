@@ -29,18 +29,13 @@ def recommend(titles,top_k):
     vectorizer = TfidfVectorizer()
     matrix = vectorizer.fit_transform(data["details"])
     cosine_similarities = linear_kernel(matrix,matrix)
+    plant_id = data["id"]
     plant_label = data['label']
     plant_name = data['common name']
     plant_sci_name=data['scientific name']
-    plant_light=data['light']
-    plant_water=data['water']
-    plant_soil=data['soil pH']
-    plant_ft=data['flower time']
-    plant_height=data['height']
-    plant_spread=data['spread']
+    plant_image = data["image"]
 
     indices = pd.Series(data.index, index=data['common name'])
-
 
     title_dict={}    # key: index, value: movie_indices, similar plants indices to idx
     lst = []
@@ -58,15 +53,21 @@ def recommend(titles,top_k):
     # print(title_dict, common_list)
     if common_list:
       print(title_dict, common_list)
-      return  [["similar to all plants",plant_name.iloc[common_list].tolist(),plant_sci_name.iloc[common_list].tolist(),plant_height.iloc[common_list].tolist(),plant_spread.iloc[common_list].tolist(),
-             plant_light.iloc[common_list].tolist(),plant_water.iloc[common_list].tolist(),plant_soil.iloc[common_list].tolist(),
-             plant_ft.iloc[common_list].tolist()]]
+      return  [["From All Plants",
+                plant_name.iloc[common_list].tolist(),
+                plant_sci_name.iloc[common_list].tolist(),
+                plant_id.iloc[common_list].tolist(),
+                plant_image.iloc[common_list].tolist(),1000]]
     else:
       l=[]
       for k,v in title_dict.items():
-        l.append([plant_label.iloc[k],plant_name.iloc[v[:2]].tolist(),plant_sci_name.iloc[v[:2]].tolist(),plant_height.iloc[v[:2]].tolist(),plant_spread.iloc[v[:2]].tolist(),
-             plant_light.iloc[v[:2]].tolist(),plant_water.iloc[v[:2]].tolist(),plant_soil.iloc[v[:2]].tolist(),
-             plant_ft.iloc[v[:2]].tolist()])
+        print(k)
+        l.append([plant_label.iloc[k],
+                  plant_name.iloc[v[:2]].tolist(),
+                  plant_sci_name.iloc[v[:2]].tolist(),
+                  plant_id.iloc[v[:2]].tolist(),
+                  plant_image.iloc[v[:2]].tolist(),
+                  int(plant_id.iloc[k])])
       return l
 
 

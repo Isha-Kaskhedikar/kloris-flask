@@ -188,6 +188,31 @@ def get_todos(current_user):
     print(todos)
     return jsonify({"tasks":todos})
 
+@app.route("/get_tasksByDate", methods=['GET','POST'])
+@token_required
+def get_tasks(current_user):
+    # current_user="eeshe"
+    form = getTasks(request.form)
+    ip_date = form.ipdate.data
+    # ip_date="2023-05-05"
+    # ipdate=datetime.datetime
+    l=[]
+    for task in db.old_tasks.find({'user': current_user}):
+        # print(">>>>..",task["tasks"])
+        for t in task["tasks"]:
+            if str(t["date"].date()) == ip_date:
+                print("hooooo",t["task_id"])
+                for x in db.tasks.find({'_id':ObjectId(t["task_id"])}):
+                    for z in db.user_plants.find({'_id':ObjectId(x["user_plant_id"])}):
+                        l.append({"_id":t["task_id"],
+                                  "plant_name":z["plant_name"],
+                                  "task":x["task"],
+                                  "otherInfo":x["otherInfo"],
+                                  "image":z["image"]})
+    
+    print("L",l)
+    return jsonify({"tasks":l})
+
 @app.route("/update_todos", methods = ['POST', 'GET']) # when to trigger next (time to perform task)
 def update_next():
     for i in db.tasks.find():
@@ -343,27 +368,45 @@ def search_question(id):
     t["_id"]=str(t["_id"])
     return jsonify({"question":t})
 
+def iterate(n,l,d,tup):
+  for i in range(n):
+      l1={}
+      l1.update({"id":tup[3][i],"common_name":tup[1][i],"scientific_name":tup[2][i],"image":tup[4][i]})
+      l.append(l1)
+  d.append({"plantName":tup[0],"pid":tup[5],"recc" : l})
+  return d
 
 @app.route("/new_recommendation",methods = ['POST','GET'])
-def get_reccos():
+@token_required
+def get_reccos(current_user):
     # get user's existing plants list from db
+    st ="application/plantsDB.xlsx"
+    df = pd.read_excel(st)
+    df.set_index("id", inplace = True)
+    existing_plants = []
+    for user in db.user_plants.find({'userID': current_user}):
+        id = user["excel_index"]-1
+        existing_plants.append(df.loc[id]["common name"])
 
-    lst = recommend(["Holy Basil, Tulsi","Star Jasmine"],5)
+    # print(existing_plants)
+    lst = recommend(existing_plants,5)
     print("\n====== RECCOMMENDATIONS =====\n")
-    l=[]
+    print(lst)
+    # data = pd.read_excel(st)
+    # data.set_index("common name", inplace = True)
+    d=[]
     for tup in lst:
-        print(tup[0],tup[1:])
-        df = {}
-        df["Common name"] = tup[1] 
-        df["Scientific name"] = tup[2] 
-        df["Height"] = tup[3]
-        df["Spread"] = tup[4]
-        df["Light"] = tup[5]
-        df["Water"] = tup[6]
-        df["Soil pH"] = tup[7]
-        df["Flowering Time"] = tup[8]
-        l.append({tup[0]:df})
-    return jsonify({"recommendation": l})
+        l=[]
+        # if tup[0] != "to all plants":
+        #     obj = iterate(2,l,d,tup)
+        # else:
+        #     obj = iterate(5,l,d,tup)
+        if tup[0] != "to all plants":
+            obj = iterate(2,l,d, tup)
+        else:
+            obj = iterate(len(tup[1]),l,d,tup)
+    print("OBJ>>>",obj)
+    return jsonify({"recommendation": obj})
 
 @app.route("/recommendation", methods = ['POST', 'GET'])
 @token_required

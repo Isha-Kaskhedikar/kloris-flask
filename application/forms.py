@@ -40,10 +40,13 @@ class replyform(FlaskForm):
     submit = SubmitField("Submit")
 
 class quessform(FlaskForm):
-    light = IntegerField('Light_Intensity')
+    light = StringField('Light')
     height = IntegerField('Height')
     spread = IntegerField('Spread')
     usee= StringField('Use')
     lat = FloatField('Latitude')
     long = FloatField('Longitude')
     submit = SubmitField("Submit")
+
+class getTasks(FlaskForm):
+    ipdate = StringField('Date')
