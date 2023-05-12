@@ -254,13 +254,44 @@ def get_plants1(current_user):
     print(plants)
     return jsonify({"plants":plants})
 
+global idtoaddtask
+idtoaddtask=""
 @app.route('/my_plant/<id>', methods=['POST','GET'])
 def fetch_plant(id):
     t=[]
+    global idtoaddtask
     for i in db.user_plants.find({"_id": ObjectId(id)}):
         i["_id"]=str(i["_id"])
         t.append(i)
+    idtoaddtask = t[0]["plant_name"]
+    print("in view--->>>",idtoaddtask)
     return jsonify({"plant": t[0]})
+
+@app.route('/addplanttask', methods=['POST',  'GET'])
+@token_required
+def upload_task(current_user):
+  if request.method == 'POST':
+    print("USER--->",current_user)
+    global idtoaddtask
+    task = request.form.get('task')
+    dur = request.form.get('dur')
+    info = request.form.get('info')
+    print("plant name---->",str(idtoaddtask))
+    check=[]
+    for i in db.user_plants.find({"userID": current_user, "plant_name": idtoaddtask}):
+        check.append(i["_id"])
+    # print("----",check)
+    if check!=[]:
+        db.tasks.insert_one({
+        "username": current_user,
+        "duration" : dur,
+        "task" : task,
+        "otherInfo" : info,
+        "next" :  datetime.datetime.now(),
+        "status" : "false",
+        "user_plant_id" : check[0]})
+        print("success")
+  return 'okkkk'
 
 @app.route("/delete_todo/<id>")
 def delete_todo(id):
@@ -452,8 +483,12 @@ def get_quess(current_user):
 
 @app.route('/excel_row/<id>', methods=['POST','GET'])
 def fetch_row(id):   #------------id dala toh id+1 wala row ayega
+    print(id)
     df = pd.read_excel('application/plantsDB.xlsx')
-    id=int(id)
+    try:
+        id=int(id)
+    except ValueError:
+        print(type(int))
     t=df.iloc[id].replace(np.nan, '').to_dict() 
     print(id,type(id))
     # print(t)
@@ -498,3 +533,65 @@ def upload_file():
       print(pred)
       return jsonify({"prediction":pred})
     return "no file to upload"
+
+@app.route('/uploadplantpic', methods=['POST',  'GET'])
+def upload_file2():
+  if request.method == 'POST':
+    print("\n ----> ", request.files.get('photo'))
+    file_to_upload = request.files.get('photo')
+    app.logger.info('%s file_to_upload', file_to_upload)
+    if file_to_upload:
+      upload_result = cloudinary.uploader.upload(file_to_upload)
+      global addplantpicture
+      addplantpicture= upload_result['url']
+      print("--->",addplantpicture)
+    #   app.logger.info(upload_result)
+  return 'okkkk'
+
+global addplantpicture
+global addplantname
+addplantpicture=""
+addplantname=""
+
+@app.route('/uploadplantname', methods=['POST',  'GET'])
+@token_required
+def upload_file3(current_user):
+  if request.method == 'POST':
+    time.sleep(3)
+    print("USER--->",current_user)
+    global addplantname
+    addplantname = request.form.get('name')
+    addplanttype = request.form.get('type')
+
+    print("\n ----> ", addplantname)
+    global addplantpicture
+    print("img:",addplantpicture)
+    #   app.logger.info(upload_result)
+    df = pd.read_excel('application/plantsDB.xlsx')
+    mask = df[df.apply(lambda row: row.astype(str).str.contains(addplanttype, case=False).any(), axis=1)]
+    if mask.empty:
+        return 'error! This plant is not registered in our database'
+    else:
+        # print(mask['id'].to_list()[0]+1)
+        # t=df.loc[mask].to_dict()
+        # print(t["id"])
+        check=[]
+        for i in db.user_plants.find({"userID": current_user, "plant_type":addplanttype}):
+            check.append(i)
+        if check!=[]:
+            return 'You have already reigstered this plant'
+        else:
+            db.user_plants.insert_one({
+            "userID": current_user,
+            "plant_type" : addplanttype,
+            "plant_name" : addplantname,
+            "image": addplantpicture,
+            "excel_index" : mask['id'].to_list()[0]+1})
+  return 'okkkk'
+
+@app.route('/getallplants', methods=['GET'])
+def allplants():
+    dtf_right = pd.read_excel("D:/RNH/kloris/kloris-flask/application/plantsDB.xlsx")
+    lst_b = (dtf_right.iloc[:,0:2]).to_dict('records')
+    # print(lst_b)
+    return jsonify({"plants":lst_b})
